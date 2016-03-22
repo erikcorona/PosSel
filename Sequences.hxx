@@ -11,6 +11,8 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include <fstream>
+#include <boost/tokenizer.hpp>
 
 //@todo bootstrap the value (PI - S/a1) to get an empirical pr(diff) btw PI & S/a1
 namespace Gen
@@ -19,14 +21,19 @@ namespace Gen
     {
     public:
 
+        Sequence(){}
         Sequence(std::string s)
         {
             seq = s;
         };
 
+        void addAllele(char allele)
+        {
+            seq += allele;
+        }
+
         virtual char& operator[](std::size_t i)=0;
         virtual std::size_t size()=0;
-        virtual std::shared_ptr<Sequence> copy()=0;
     protected:
         std::string seq;
     };
@@ -35,12 +42,38 @@ namespace Gen
     public:
         StrSequence(std::string s) : Sequence(s) { }
         char& operator[](std::size_t i) { return seq[i];}
-
-        std::shared_ptr<Sequence> copy()
-        {
-            return std::shared_ptr<Sequence>(new StrSequence(seq));
-        }
         std::size_t size(){return seq.size();}
+    };
+
+    class LongSequence : public Sequence
+    {
+    public:
+        LongSequence(std::vector<std::string>& rsids, std::vector<int>& positions)
+        : ids{rsids}, pos{positions}
+        {
+            startI = 0;
+            endI   = 0; // exclusive
+        }
+
+        std::size_t size(){return static_cast<std::size_t>(endI - startI);}
+        char& operator[](std::size_t i)
+        {
+            return seq[startI+i];
+        }
+
+        /**
+         * @param startIndex inclusive
+         * @param endIndex exclusive
+         */
+        void setWindowByIndex(int startIndex, int endIndex)
+        {
+            startI = startIndex;
+            endI = endIndex;
+        }
+    private:
+        int startI, endI;
+        std::vector<std::string>& ids;
+        std::vector<int>& pos;
     };
 
     class Sequences
@@ -49,6 +82,16 @@ namespace Gen
         friend class DiploidSequences;
     public:
 
+        void showSequences()
+        {
+            for(auto& s : seqs)
+            {
+                for(std::size_t i{0}; i < seqLength(); i++)
+                    std::cout << (*s)[i];
+                std::cout << std::endl;
+            }
+        }
+
         /**
          * Adds one sequence to the list of sequences
          * @param seq the haplotype sequence
@@ -56,7 +99,7 @@ namespace Gen
          */
         void addSeq(std::shared_ptr<Gen::Sequence> seq)
         {
-            seqs.push_back(seq->copy());
+            seqs.push_back(seq);
         }
 
         /**
@@ -136,6 +179,7 @@ namespace Gen
 
     protected:
         std::vector<std::shared_ptr<Sequence>> seqs;
+
         virtual std::unique_ptr<Sequences> uniq_new()=0;
 
         std::unique_ptr<Sequences> randomSitesClone()
@@ -237,6 +281,110 @@ namespace Gen
         {
             return std::unique_ptr<Sequences>(new HaploidSequences());
         }
+    };
+
+    class HapMapSequences : public HaploidSequences
+    {
+    public:
+        HapMapSequences(std::string fileName)
+        {
+            std::ifstream file;
+            file.open(fileName);
+            if(file.is_open())
+            {
+                boost::char_separator<char> sep(" ");
+                std::string line;
+                unsigned long numSeqs{0};
+                if(!file.eof())
+                {
+                    getline(file, line); // get num individuals from header
+                    boost::tokenizer<boost::char_separator<char>> tokens(line, sep);
+                    std::vector<std::string> toks(tokens.begin(), tokens.end());
+                    numSeqs = toks.size()-2; // RSID and POS are not sequences
+                }
+
+                seqs.resize(numSeqs);
+                for(std::size_t i = 0; i < numSeqs; i++)
+                    seqs[i] = std::shared_ptr<Sequence>(new LongSequence(rsids, pos));
+
+                while(!file.eof())
+                {
+                    getline(file,line);
+
+                    if(line.size() < 1) // skip blank lines
+                        continue;
+                    boost::tokenizer<boost::char_separator<char>> tokens(line, sep);
+                    std::vector<std::string> row(tokens.begin(), tokens.end());
+
+                    assert(row.size() > 0);
+                    rsids.push_back(row[0]);
+                    pos.push_back(atoi(row[1].c_str()));
+
+                    for(std::size_t i = 2; i < row.size(); i++)
+                        seqs[i-2]->addAllele(row[i][0]);
+                }
+            }
+        }
+
+        /**
+         * @param startIndex inclusive
+         * @param endIndex exclusive
+         */
+        void setWindowByIndex(int startIndex, int endIndex)
+        {
+            for(auto& seq : seqs)
+            {
+                LongSequence* ls;
+                ls = static_cast<LongSequence*>(seq.get());
+                ls->setWindowByIndex(startIndex, endIndex);
+            }
+        }
+
+        void setWindowByPos(int startPos, int endPos)
+        {
+            int startI{-2}, endI{-2};
+            for(std::size_t i = 0; i < pos.size(); i++)
+            {
+                if (pos[i] == startPos) {
+                    startI = static_cast<int>(i);
+                    break;
+                }
+
+                if(pos[i] > startPos)
+                {
+                    startI = static_cast<int>(i-1);
+                    break;
+                }
+            }
+
+            if(startI < 0)
+                startI = 0;
+
+            for(std::size_t i = 0; i < pos.size(); i++)
+            {
+                if(pos[i] == endPos)
+                {
+                    endI = static_cast<int>(i + 1);
+                    break;
+                }
+
+                if(pos[i] > endPos)
+                {
+                    endI = static_cast<int>(i);
+                    break;
+                }
+            }
+
+            if(endPos > pos.back())
+                endI = static_cast<int>(pos.size());
+            std::cerr << "s:" << startI << "\t e:" << endI << std::endl;
+            assert(startI >= 0 && endI >= 0 && endI != startI);
+            setWindowByIndex(startI, endI);
+            assert(seqLength() > 0);
+        }
+    private:
+        std::vector<std::string> rsids;
+        std::vector<int> pos;
     };
 
     class DiploidSequences : public Sequences {
