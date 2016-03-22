@@ -29,6 +29,8 @@ namespace Gen
 
         void addAllele(char allele)
         {
+            if(allele != 'A' && allele != 'C' && allele != 'G' && allele != 'T')
+                assert(false);
             seq += allele;
         }
 
@@ -330,7 +332,8 @@ namespace Gen
          * @param startIndex inclusive
          * @param endIndex exclusive
          */
-        void setWindowByIndex(int startIndex, int endIndex)
+        template<typename WholeNumber>
+        void setWindowByIndex(WholeNumber startIndex, WholeNumber endIndex)
         {
             for(auto& seq : seqs)
             {
