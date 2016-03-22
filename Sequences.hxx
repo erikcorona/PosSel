@@ -15,13 +15,32 @@
 //@todo bootstrap the value (PI - S/a1) to get an empirical pr(diff) btw PI & S/a1
 namespace Gen
 {
-    class Sequence : public std::string
+    class Sequence
     {
     public:
-        Sequence(std::string s) : std::string(s){};
 
-    private:
+        Sequence(std::string s)
+        {
+            seq = s;
+        };
 
+        virtual char& operator[](std::size_t i)=0;
+        virtual std::size_t size()=0;
+        virtual std::shared_ptr<Sequence> copy()=0;
+    protected:
+        std::string seq;
+    };
+
+    class StrSequence : public Sequence{
+    public:
+        StrSequence(std::string s) : Sequence(s) { }
+        char& operator[](std::size_t i) { return seq[i];}
+
+        std::shared_ptr<Sequence> copy()
+        {
+            return std::shared_ptr<Sequence>(new StrSequence(seq));
+        }
+        std::size_t size(){return seq.size();}
     };
 
     class Sequences
@@ -35,9 +54,9 @@ namespace Gen
          * @param seq the haplotype sequence
          * @param orgID the ID of the organism
          */
-        void addSeq(std::string seq)
+        void addSeq(std::shared_ptr<Gen::Sequence> seq)
         {
-            seqs.push_back(std::make_shared<Sequence>(seq));
+            seqs.push_back(seq->copy());
         }
 
         /**
@@ -197,7 +216,7 @@ namespace Gen
         HaploidSequences(HaploidSequences& other)
         {
             for(auto& seq : other.seqs)
-                this->addSeq(*seq.get());
+                addSeq(seq);
         }
 
         void addOrganism(Sequences& sequences, int i)
@@ -227,7 +246,7 @@ namespace Gen
         DiploidSequences(DiploidSequences& other)
         {
             for(auto& seq : other.seqs)
-                addSeq(*seq.get());
+                addSeq(seq);
         }
 
         void addOrganism(Sequences &sequences, int i)

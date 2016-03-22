@@ -7,16 +7,16 @@ using namespace std;
 
 void test1(std::unique_ptr<Gen::Sequences>& seqs)
 {
-    seqs->addSeq("ATAATAAAAAAATAATAAAAAAATAAAAAAAATAAAAAAAA");//, "sub0");
-    seqs->addSeq("AAAAAAAATAAATAATAAAAAAATAAAAAAAAAAAAAAAAA");//, "sub1");
-    seqs->addSeq("AAAATAAAAATATAATAAAAAAATATAAAAAAAAAAAAAAA");//, "sub2");
-    seqs->addSeq("AAAAAAAAAAAATAATAAAAAAATAAATAAATAAAAAAAAA");//, "sub3");
-    seqs->addSeq("AAAATAAAAAAAATATAAAAAAATAAAAAAAAAAAAAAAAA");//, "sub4");
-    seqs->addSeq("AAAATAAAAAAAAAATAAAAAAAAAAAAAAAAAAATAAAAA");//, "sub5");
-    seqs->addSeq("AAAAAATAAAAATAATAAAAAAATAAAAAAAAAAAAAAAAA");//, "sub6");
-    seqs->addSeq("AAAAAAAAAAAAAAATAAAAAAATAAAAAAAAAAAAAAATA");//, "sub7");
-    seqs->addSeq("AAAAAAAAAAAAAAAAAAAAAAATAAAAAAAAAAAAAAAAA");//, "sub8");
-    seqs->addSeq("AAAAAAAAAAAAAAATAAAAAAATAATAAAAAAAAAAAAAA");//, "sub9");
+    seqs->addSeq(std::shared_ptr<Gen::Sequence>(new Gen::StrSequence("ATAATAAAAAAATAATAAAAAAATAAAAAAAATAAAAAAAA")));//, "sub0");
+    seqs->addSeq(std::shared_ptr<Gen::Sequence>(new Gen::StrSequence("AAAAAAAATAAATAATAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub1");
+    seqs->addSeq(std::shared_ptr<Gen::Sequence>(new Gen::StrSequence("AAAATAAAAATATAATAAAAAAATATAAAAAAAAAAAAAAA")));//, "sub2");
+    seqs->addSeq(std::shared_ptr<Gen::Sequence>(new Gen::StrSequence("AAAAAAAAAAAATAATAAAAAAATAAATAAATAAAAAAAAA")));//, "sub3");
+    seqs->addSeq(std::shared_ptr<Gen::Sequence>(new Gen::StrSequence("AAAATAAAAAAAATATAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub4");
+    seqs->addSeq(std::shared_ptr<Gen::Sequence>(new Gen::StrSequence("AAAATAAAAAAAAAATAAAAAAAAAAAAAAAAAAATAAAAA")));//, "sub5");
+    seqs->addSeq(std::shared_ptr<Gen::Sequence>(new Gen::StrSequence("AAAAAATAAAAATAATAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub6");
+    seqs->addSeq(std::shared_ptr<Gen::Sequence>(new Gen::StrSequence("AAAAAAAAAAAAAAATAAAAAAATAAAAAAAAAAAAAAATA")));//, "sub7");
+    seqs->addSeq(std::shared_ptr<Gen::Sequence>(new Gen::StrSequence("AAAAAAAAAAAAAAAAAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub8");
+    seqs->addSeq(std::shared_ptr<Gen::Sequence>(new Gen::StrSequence("AAAAAAAAAAAAAAATAAAAAAATAATAAAAAAAAAAAAAA")));//, "sub9");
 
     cout << "Checking validity: " << (seqs->isValid() ? "success" : "failed") << endl;
     seqs->print();
