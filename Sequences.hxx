@@ -54,8 +54,8 @@ namespace Gen
         {
             std::vector<std::unique_ptr<Sequences>> vec(n);
 
-            for(int i = 0; i < n; i++)
-                vec[i] = sample();
+            for(auto& v : vec)
+                v = sample();
             std::sort(vec.begin(), vec.end(), sorter);
             return vec;
         }
@@ -63,15 +63,15 @@ namespace Gen
         double tajPI()
         {
             int diff{0};
-            for(int i = 0; i < seqs.size(); i++)
-                for(int k = i+1; k < seqs.size(); k++)
-                    for(int allele{0}; allele < seqLength(); allele++)
+            for(std::size_t i = 0; i < seqs.size(); i++)
+                for(std::size_t k = i+1; k < seqs.size(); k++)
+                    for(std::size_t allele{0}; allele < seqLength(); allele++)
                         diff += (*seqs[i])[allele] != (*seqs[k])[allele];
 
             return static_cast<double>(diff)/(seqs.size()*(seqs.size()-1.0)/2);
         }
 
-        bool isSegregating(int i)
+        bool isSegregating(std::size_t i)
         {
             char ref = (*seqs[0])[i];
             for(auto& seq : seqs)
@@ -85,7 +85,7 @@ namespace Gen
         int tajS()
         {
             int segs{0};
-            for(int i = 0; i < seqLength(); i++)
+            for(std::size_t i = 0; i < seqLength(); i++)
                 segs += isSegregating(i);
             return segs;
         }
@@ -98,7 +98,7 @@ namespace Gen
         }
 
         virtual std::size_t nOrganisms()=0;
-        virtual void addOrganism(Sequences& sequences, int i)=0;
+        virtual void addOrganism(Sequences& sequences, int orgI)=0;
 
         void print()
         {
@@ -115,25 +115,40 @@ namespace Gen
         std::vector<std::shared_ptr<Sequence>> seqs;
         virtual std::unique_ptr<Sequences> uniq_new()=0;
 
+        std::unique_ptr<Sequences> randomSitesClone()
+        {
+            static boost::random::mt19937 rng(2);
+            boost::random::uniform_int_distribution<> sites(0,static_cast<int>(seqLength())-1);
+            auto copy = clone();
+            for(std::size_t i = 0; i < seqLength(); i++)
+            {
+                int siteIndex = sites(rng);
+                for(std::size_t seqI = 0; seqI < seqs.size(); seqI++)
+                    (*copy->seqs[seqI].get())[i] = (*seqs[seqI].get())[siteIndex];
+            }
+            return copy;
+        }
         std::unique_ptr<Sequences> sample()
         {
             static boost::random::mt19937 rng(1);
-            boost::random::uniform_int_distribution<> six(0,static_cast<int>(nOrganisms())-1);
+            boost::random::uniform_int_distribution<> org(0,static_cast<int>(nOrganisms())-1);
 
             auto sequences = uniq_new();
 
-            for(int i = 0; i < nOrganisms(); i++)
-                sequences->addOrganism(*this, six(rng));
+            auto tmp = randomSitesClone();
+            for(std::size_t i = 0; i < nOrganisms(); i++)
+                sequences->addOrganism(*tmp, org(rng));
             return sequences;
         }
 
+        virtual std::unique_ptr<Sequences> clone()=0;
     private:
 
         // a1 is described in tajmad1.pdf
         double a1()
         {
             double sum{0};
-            for(int i = 1; i < seqs.size(); i++)
+            for(std::size_t i = 1; i < seqs.size(); i++)
                 sum += 1.0/i;
             return sum;
         }
@@ -141,7 +156,7 @@ namespace Gen
         double a2()
         {
             double sum{0};
-            for(int i = 1; i < seqs.size(); i++)
+            for(std::size_t i = 1; i < seqs.size(); i++)
                 sum += 1.0/(i*i);
             return sum;
         }
@@ -174,12 +189,25 @@ namespace Gen
     {
     public:
 
+        HaploidSequences(){}
+        HaploidSequences(HaploidSequences& other)
+        {
+            for(auto& seq : other.seqs)
+                this->addSeq(*seq.get());
+        }
+
         void addOrganism(Sequences& sequences, int i)
         {
             seqs.push_back(sequences.seqs[i]);
         }
 
         std::size_t nOrganisms() { return seqs.size();}
+
+    protected:
+        std::unique_ptr<Sequences> clone()
+        {
+            return std::unique_ptr<Sequences>(new HaploidSequences(*this));
+        }
 
     private:
         std::unique_ptr<Sequences> uniq_new()
@@ -191,10 +219,23 @@ namespace Gen
     class DiploidSequences : public Sequences {
     public:
 
+        DiploidSequences(){}
+        DiploidSequences(DiploidSequences& other)
+        {
+            for(auto& seq : other.seqs)
+                addSeq(*seq.get());
+        }
+
         void addOrganism(Sequences &sequences, int i)
         {
             seqs.push_back(sequences.seqs[i*2]);
             seqs.push_back(sequences.seqs[i*2 + 1]);
+        }
+
+    protected:
+        std::unique_ptr<Sequences> clone()
+        {
+            return std::unique_ptr<Sequences>(new DiploidSequences(*this));
         }
 
     private:

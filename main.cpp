@@ -21,11 +21,9 @@ void test1(std::unique_ptr<Gen::Sequences>& seqs)
     cout << "Checking validity: " << (seqs->isValid() ? "success" : "failed") << endl;
     seqs->print();
 
-    constexpr std::size_t n = 100000;
-    constexpr double conf = 0.05;
+    constexpr std::size_t n = 1000;
+    constexpr double conf = 0.02;
     auto res = seqs->sortedSamples(n, [&](auto& a, auto& b){return a->tajD() < b->tajD();});
-//    for(auto& r : res)
-//        std::cout << r->tajD() << std::endl;
     std::cout << conf*100 << "% [" <<
     res[std::round(  conf/2*n)]->tajD() << "," <<
     res[std::round((1-conf/2)*n)]->tajD() << "]" << std::endl;
