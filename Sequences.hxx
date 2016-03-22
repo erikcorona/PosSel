@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <memory>
 
+//@todo bootstrap the value (PI - S/a1) to get an empirical pr(diff) btw PI & S/a1
 namespace Gen
 {
     class Sequence : public std::string
@@ -39,6 +40,9 @@ namespace Gen
             seqs.push_back(std::make_shared<Sequence>(seq));
         }
 
+        /**
+         * Makes sure all sequences have the same length
+         */
         bool isValid()
         {
             for(auto& sequence : seqs)
