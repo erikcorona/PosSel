@@ -34,6 +34,7 @@ namespace Gen
             seq += allele;
         }
 
+        virtual std::string getString()=0;
         virtual char& operator[](std::size_t i)=0;
         virtual std::size_t size()=0;
     protected:
@@ -45,6 +46,7 @@ namespace Gen
         StrSequence(std::string s) : Sequence(s) { }
         char& operator[](std::size_t i) { return seq[i];}
         std::size_t size(){return seq.size();}
+        std::string getString(){return seq;}
     };
 
     class LongSequence : public Sequence
@@ -57,7 +59,12 @@ namespace Gen
             endI   = 0; // exclusive
         }
 
+        std::string getString(){
+            return seq.substr(static_cast<std::size_t>(startI), static_cast<std::size_t>(endI-startI));
+        }
+
         std::size_t size(){return static_cast<std::size_t>(endI - startI);}
+        auto trueSize(){return seq.size();}
         char& operator[](std::size_t i)
         {
             return seq[startI+i];
@@ -92,6 +99,11 @@ namespace Gen
                     std::cout << (*s)[i];
                 std::cout << std::endl;
             }
+        }
+
+        std::string getString(std::size_t i)
+        {
+            return seqs[i]->getString();
         }
 
         /**
@@ -165,6 +177,7 @@ namespace Gen
             return (pi-s/a1())/(std::sqrt(e1()*s+e2()*s*(s-1)));
         }
 
+        auto nSequences(){ return seqs.size();}
         virtual std::size_t nOrganisms()=0;
         virtual void addOrganism(Sequences& sequences, int orgI)=0;
 
@@ -285,9 +298,31 @@ namespace Gen
         }
     };
 
-    class HapMapSequences : public HaploidSequences
+    class PositionSequences
+    {
+
+        void setBuild(std::string theBuild)
+        {
+            build = theBuild;
+        }
+
+        auto findIndex(int position)
+        {
+            for(std::size_t i = 0; i < pos.size(); i++)
+                if (pos[i] >= position)
+                    return i;
+            return pos.size()-1;
+        }
+
+    protected:
+        std::vector<int> pos;
+        std::string build;
+    };
+
+    class HapMapSequences : public HaploidSequences, public PositionSequences
     {
     public:
+
         HapMapSequences(std::string fileName)
         {
             std::ifstream file;
@@ -328,6 +363,11 @@ namespace Gen
             }
         }
 
+        auto trueSeqLength()
+        {
+            return static_cast<LongSequence*>(seqs[0].get())->trueSize();
+        }
+
         /**
          * @param startIndex inclusive
          * @param endIndex exclusive
@@ -345,52 +385,24 @@ namespace Gen
 
         void setWindowByPos(int startPos, int endPos)
         {
-            int startI{-2}, endI{-2};
-            for(std::size_t i = 0; i < pos.size(); i++)
-            {
-                if (pos[i] == startPos) {
-                    startI = static_cast<int>(i);
-                    break;
-                }
+            int startI = findIndex(startPos);// returns -----*|-------
+            if(startI > 0 && pos[startI] > startPos) // --|*--- not --*|---
+                startI--;
+            int endI = findIndex(endPos);
+            if(endI < pos.size() && pos[endI] == endPos)
+                endI++;
 
-                if(pos[i] > startPos)
-                {
-                    startI = static_cast<int>(i-1);
-                    break;
-                }
-            }
-
-            if(startI < 0)
-                startI = 0;
-
-            for(std::size_t i = 0; i < pos.size(); i++)
-            {
-                if(pos[i] == endPos)
-                {
-                    endI = static_cast<int>(i + 1);
-                    break;
-                }
-
-                if(pos[i] > endPos)
-                {
-                    endI = static_cast<int>(i);
-                    break;
-                }
-            }
-
-            if(endPos > pos.back())
-                endI = static_cast<int>(pos.size());
             std::cerr << "s:" << startI << "\t e:" << endI << std::endl;
             assert(startI >= 0 && endI >= 0 && endI != startI);
             setWindowByIndex(startI, endI);
-            assert(seqLength() > 0);
         }
+
     private:
         std::vector<std::string> rsids;
-        std::vector<int> pos;
     };
 
-    class DiploidSequences : public Sequences {
+    class DiploidSequences : public Sequences
+    {
     public:
 
         DiploidSequences(){}

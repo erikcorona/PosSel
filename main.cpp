@@ -2,6 +2,7 @@
 #include <vector>
 #include <cmath>
 #include "Sequences.hxx"
+#include "SequencesAlgos.hxx"
 
 using namespace std;
 
@@ -33,20 +34,25 @@ void test1(SeqPtr& seqs)
 void test2()
 {
     Gen::HapMapSequences hapmap("hapmap3_r2_b36_fwd.consensus.qc.poly.chr19_ceu.unr.phased");
+    hapmap.setBuild("36");
     int cnt{0};
-    constexpr std::size_t step = 60;
-    for(std::size_t i = 0; i < 26000 + step; i+= step)
+    constexpr std::size_t step = 10;
+    for(std::size_t i = 0; i < hapmap.trueSeqLength() - step; i+= step)
     {
-        hapmap.setWindowByIndex(i, i + step);
+        hapmap.setWindowByIndex(static_cast<std::size_t>(0), i + step);
         double d = hapmap.tajD();
-        std::cout << d << ",";
+        std::cout << d << "\t" << SeqAlg::ehh(hapmap) << std::endl;
         if(d*d > 4)
             cnt++;
     }
-    std::cout << std::endl;
 
     std::cout << cnt << std::endl;
     std::cout.flush();
+}
+
+void test3()
+{
+
 }
 
 int main()
