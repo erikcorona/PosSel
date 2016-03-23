@@ -24,7 +24,7 @@ void test1(SeqsPtr& seqs)
     seqs->addSeq(SeqPtr(new StrSequence("AAAAAAAAAAAAAAATAAAAAAATAATAAAAAAAAAAAAAA")));//, "sub9");
 
     cout << "Checking validity: " << (seqs->isValid() ? "success" : "failed") << endl;
-    SeqAlg::print(seqs);
+    SeqAlg::D::print(seqs);
 }
 
 void test2()
@@ -36,7 +36,7 @@ void test2()
     for(std::size_t i = 0; i < hapmap->trueSeqLength() - step; i+= step)
     {
         hapmap->setWindowByIndex(static_cast<std::size_t>(0), i + step);
-        double d = SeqAlg::tajD(hapmap);
+        double d = SeqAlg::D::tajD(hapmap);
         std::cout << d << "\t" << SeqAlg::ehh(hapmap) << std::endl;
         if(d*d > 4)
             cnt++;

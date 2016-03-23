@@ -38,6 +38,7 @@ namespace SeqAlg
 
     // Tajima's D-----------------------------------------
 
+namespace D{
     // a1 is described in tajmad1.pdf
     double a1(std::size_t nSequences)
     {
@@ -119,6 +120,7 @@ namespace SeqAlg
         std::cout << "Tajima's D: " << tajD(seqs) << std::endl;
         std::cout << "a1=" << a1(n) << " a2=" << a2(n) << " b1=" << b1(n) << " b2=" << b2(n) << std::endl;
         std::cout << "c1=" << c1(n) << " c2=" << c2(n) << " e1=" << e1(n) << " e2=" << e2(n) << std::endl;
+    }
     }
 }
 #endif //POSSEL_SEQUENCESALGOS_HXX
