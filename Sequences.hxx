@@ -91,6 +91,11 @@ namespace Gen
         friend class DiploidSequences;
     public:
 
+        char allele(std::size_t seqIndex, std::size_t alleleIndex)
+        {
+            return (*seqs[seqIndex])[alleleIndex];
+        }
+
         void showSequences()
         {
             for(auto& s : seqs)
@@ -140,17 +145,6 @@ namespace Gen
             return vec;
         }
 
-        double tajPI()
-        {
-            int diff{0};
-            for(std::size_t i = 0; i < seqs.size(); i++)
-                for(std::size_t k = i+1; k < seqs.size(); k++)
-                    for(std::size_t allele{0}; allele < seqLength(); allele++)
-                        diff += (*seqs[i])[allele] != (*seqs[k])[allele];
-
-            return static_cast<double>(diff)/(seqs.size()*(seqs.size()-1.0)/2);
-        }
-
         bool isSegregating(std::size_t i)
         {
             char ref = (*seqs[0])[i];
@@ -162,35 +156,9 @@ namespace Gen
             return false;
         }
 
-        int tajS()
-        {
-            int segs{0};
-            for(std::size_t i = 0; i < seqLength(); i++)
-                segs += isSegregating(i);
-            return segs;
-        }
-
-        double tajD()
-        {
-            double pi = tajPI();
-            double s = tajS();
-            return (pi-s/a1())/(std::sqrt(e1()*s+e2()*s*(s-1)));
-        }
-
         auto nSequences(){ return seqs.size();}
         virtual std::size_t nOrganisms()=0;
         virtual void addOrganism(Sequences& sequences, int orgI)=0;
-
-        void print()
-        {
-            std::cout << seqs.size() << " sequences, " << seqLength() << " sites" << std::endl;
-            std::cout << "pi: " << tajPI() << std::endl;
-            std::cout << "Segregating sites: " << tajS() << "/" << seqLength() << std::endl;
-            std::cout << "theta_hat[estimated from S]: " << tajS()/a1() << std::endl;
-            std::cout << "Tajima's D: " << tajD() << std::endl;
-            std::cout << "a1=" << a1() << " a2=" << a2() << " b1=" << b1() << " b2=" << b2() << std::endl;
-            std::cout << "c1=" << c1() << " c2=" << c2() << " e1=" << e1() << " e2=" << e2() << std::endl;
-        }
 
     protected:
         std::vector<std::shared_ptr<Sequence>> seqs;
@@ -224,47 +192,6 @@ namespace Gen
         }
 
         virtual std::unique_ptr<Sequences> clone()=0;
-    private:
-
-        // a1 is described in tajmad1.pdf
-        double a1()
-        {
-            double sum{0};
-            for(std::size_t i = 1; i < seqs.size(); i++)
-                sum += 1.0/i;
-            return sum;
-        }
-
-        double a2()
-        {
-            double sum{0};
-            for(std::size_t i = 1; i < seqs.size(); i++)
-                sum += 1.0/(i*i);
-            return sum;
-        }
-
-        double b1()
-        {
-            double n = static_cast<double>(seqs.size());
-            return (n+1.0)/(3.0*(n-1));
-        }
-
-        double b2()
-        {
-            double n = static_cast<double>(seqs.size());
-            return (2*(n*n+n+3))/(9*n*(n-1));
-        }
-
-        double c1() {            return b1()-1.0/a1();        }
-
-        double c2()
-        {
-            double n = static_cast<double>(seqs.size());
-            return b2() - (n+2)/(a1()*n) + a2()/(a1()*a1());
-        }
-
-        double e1()        {            return c1()/a1();        }
-        double e2()        {            return c2()/(a1()*a1()+a2());        }
     };
 
     class HaploidSequences : public Sequences
@@ -301,6 +228,7 @@ namespace Gen
     class PositionSequences
     {
 
+    public:
         void setBuild(std::string theBuild)
         {
             build = theBuild;
