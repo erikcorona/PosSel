@@ -280,13 +280,13 @@ namespace Gen
 
         void download(std::string path)
         {
-            system(std::string("wget ") +
-                           std::string("https://hapmap.ncbi.nlm.nih.gov/downloads/recombination/latest/rates/genetic_map_chr") +
-                           std::to_string(chr) +
-                           std::string("_b36.txt") +
-                           std::string("-O ") +
-                           path
-            );
+//            system(std::string("wget ") +
+//                           std::string("https://hapmap.ncbi.nlm.nih.gov/downloads/recombination/latest/rates/genetic_map_chr") +
+//                           std::to_string(chr) +
+//                           std::string("_b36.txt") +
+//                           std::string("-O ") +
+//                           path
+//            );
         }
 
         bool dataExists(std::string path)
