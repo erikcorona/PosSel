@@ -6,27 +6,6 @@
 
 using namespace std;
 
-template<typename SeqsPtr>
-void test1(SeqsPtr& seqs)
-{
-    using namespace Gen;
-    using SeqPtr = std::shared_ptr<Sequence>;
-
-    seqs->addSeq(SeqPtr(new StrSequence("ATAATAAAAAAATAATAAAAAAATAAAAAAAATAAAAAAAA")));//, "sub0");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAAAAAATAAATAATAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub1");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAATAAAAATATAATAAAAAAATATAAAAAAAAAAAAAAA")));//, "sub2");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAAAAAAAAAATAATAAAAAAATAAATAAATAAAAAAAAA")));//, "sub3");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAATAAAAAAAATATAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub4");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAATAAAAAAAAAATAAAAAAAAAAAAAAAAAAATAAAAA")));//, "sub5");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAAAATAAAAATAATAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub6");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAAAAAAAAAAAAATAAAAAAATAAAAAAAAAAAAAAATA")));//, "sub7");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAAAAAAAAAAAAAAAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub8");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAAAAAAAAAAAAATAAAAAAATAATAAAAAAAAAAAAAA")));//, "sub9");
-
-    cout << "Checking validity: " << (seqs->isValid() ? "success" : "failed") << endl;
-    SeqAlg::D::print(seqs);
-}
-
 void test2()
 {
     auto hapmap = std::make_unique<Gen::HapMapSequences>("hapmap3_r2_b36_fwd.consensus.qc.poly.chr19_ceu.unr.phased");

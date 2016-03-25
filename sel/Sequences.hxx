@@ -42,7 +42,8 @@ namespace Gen
         std::string seq;
     };
 
-    class StrSequence : public Sequence{
+    class StrSequence : public Sequence
+    {
     public:
         StrSequence(std::string s) : Sequence(s) { }
         char& operator[](std::size_t i) { return seq[i];}
