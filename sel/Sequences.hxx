@@ -246,8 +246,9 @@ namespace Gen
     class GeneticMap : public PositionSequences
     {
     public:
-        GeneticMap()
+        GeneticMap(short chromosome)
         {
+            chr = chromosome;
             ensureDataExists();
 //            readInData();
         }
@@ -269,6 +270,8 @@ namespace Gen
             return val >= 0 ? val : -val;
         }
 
+        bool dataExists(){ return dataExists(dataSetPath());}
+
     private:
 
         std::vector<double> cM; // first index is chr, 2nd is the position
@@ -280,13 +283,13 @@ namespace Gen
 
         void download(std::string path)
         {
-//            system(std::string("wget ") +
-//                           std::string("https://hapmap.ncbi.nlm.nih.gov/downloads/recombination/latest/rates/genetic_map_chr") +
-//                           std::to_string(chr) +
-//                           std::string("_b36.txt") +
-//                           std::string("-O ") +
-//                           path
-//            );
+            system(std::string(std::string("wget ") +
+                           std::string("https://hapmap.ncbi.nlm.nih.gov/downloads/recombination/latest/rates/genetic_map_chr") +
+                           std::to_string(chr) +
+                           std::string("_b36.txt ") +
+                           std::string("-O ") +
+                           path).c_str()
+            );
         }
 
         bool dataExists(std::string path)

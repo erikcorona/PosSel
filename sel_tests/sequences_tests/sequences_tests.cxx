@@ -3,10 +3,15 @@
 //
 
 #include "gtest/gtest.h"
-#include <iostream>
+#include <Sequences.hxx>
 
 
-TEST(BASICCAT, ATEST)
+TEST(GENETICMAP, GENETICMAP_DOWNLOAD_Test)
 {
-    std::cout << "testing enabled" << std::endl;
+    for(short chr = 1; chr < 23; chr++)
+    {
+        Gen::GeneticMap genMap(chr);
+        ASSERT_TRUE(genMap.dataExists());
+    }
+
 }
