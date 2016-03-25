@@ -36,9 +36,15 @@ namespace SeqAlg
         return num/(c*(c-1)/2);
     }
 
+    double integrateEHH(std::shared_ptr<Gen::Sequences> ptr, Gen::GeneticMap& map)
+    {
+        
+    }
+
     // Tajima's D-----------------------------------------
 
-namespace D{
+namespace D
+{
     // a1 is described in tajmad1.pdf
     double a1(std::size_t nSequences)
     {

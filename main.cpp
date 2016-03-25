@@ -27,11 +27,6 @@ void test2()
     std::cout.flush();
 }
 
-void test3()
-{
-
-}
-
 int main()
 {
     test2();
