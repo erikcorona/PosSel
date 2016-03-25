@@ -13,6 +13,7 @@
 #include <memory>
 #include <fstream>
 #include <boost/tokenizer.hpp>
+#include "WindowAlgos.hxx"
 
 //@todo bootstrap the value (PI - S/a1) to get an empirical pr(diff) btw PI & S/a1
 namespace Gen
@@ -234,20 +235,78 @@ namespace Gen
             build = theBuild;
         }
 
-        auto findIndex(int position)
-        {
-            for(std::size_t i = 0; i < pos.size(); i++)
-                if (pos[i] >= position)
-                    return i;
-            return pos.size()-1;
-        }
+        void setChr(short chromosome){ chr = chromosome;}
 
     protected:
+        short chr;
         std::vector<int> pos;
         std::string build;
     };
 
-    class HapMapSequences : public HaploidSequences, public PositionSequences
+    class GeneticMap : public PositionSequences
+    {
+    public:
+        GeneticMap()
+        {
+            ensureDataExists();
+//            readInData();
+        }
+
+        double getcM(int chrPos)
+        {
+            // binary search for ---|*|----
+            int i = win::getIndexBehindOrEqual(pos,chrPos);
+            if(chrPos == pos[i])
+                return cM[i];
+            assert(i+1 < pos.size());
+            return cM[i] + (chrPos-pos[i])*(cM[i+1] - cM[i])/(pos[i+1] - pos[i]); // extrapolate cM
+        }
+
+        double distance(int start, int end)
+        {
+            assert(end > start);
+            double val = getcM(start) - getcM(end);
+            return val >= 0 ? val : -val;
+        }
+
+    private:
+
+        std::vector<double> cM; // first index is chr, 2nd is the position
+        void ensureDataExists()
+        {
+            if(!dataExists(dataSetPath()))
+                download(dataSetPath());
+        }
+
+        void download(std::string path)
+        {
+            system(std::string("wget ") +
+                           std::string("https://hapmap.ncbi.nlm.nih.gov/downloads/recombination/latest/rates/genetic_map_chr") +
+                           std::to_string(chr) +
+                           std::string("_b36.txt") +
+                           std::string("-O ") +
+                           path
+            );
+        }
+
+        bool dataExists(std::string path)
+        {
+            std::ifstream f(path.c_str());
+            bool good = f.good();
+            f.close();
+            return good;
+        }
+
+        std::string dataSetPath()
+        {
+            using namespace std;
+            return string("data/hapmapGeneticMap/genetic_map_chr") + to_string(chr) + string("_b36.txt");
+        }
+    };
+
+
+
+class HapMapSequences : public HaploidSequences, public PositionSequences
     {
     public:
 
@@ -313,13 +372,8 @@ namespace Gen
 
         void setWindowByPos(int startPos, int endPos)
         {
-            int startI = findIndex(startPos);// returns -----*|-------
-            if(startI > 0 && pos[startI] > startPos) // --|*--- not --*|---
-                startI--;
-            int endI = findIndex(endPos);
-            if(endI < pos.size() && pos[endI] == endPos)
-                endI++;
-
+            int startI = win::getIndexBehindOrEqual(pos,startPos);
+            int endI = win::getIndexInfront(pos,endPos);
             std::cerr << "s:" << startI << "\t e:" << endI << std::endl;
             assert(startI >= 0 && endI >= 0 && endI != startI);
             setWindowByIndex(startI, endI);
@@ -359,7 +413,6 @@ namespace Gen
         }
 
         std::size_t nOrganisms() { return seqs.size()/2;}
-
     };
 }
 

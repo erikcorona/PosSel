@@ -31,6 +31,8 @@ void test2()
 {
     auto hapmap = std::make_unique<Gen::HapMapSequences>("hapmap3_r2_b36_fwd.consensus.qc.poly.chr19_ceu.unr.phased");
     hapmap->setBuild("36");
+    hapmap->setChr(19);
+
     int cnt{0};
     constexpr std::size_t step = 10;
     for(std::size_t i = 0; i < hapmap->trueSeqLength() - step; i+= step)
