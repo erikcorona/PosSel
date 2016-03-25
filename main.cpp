@@ -34,11 +34,6 @@ void test3()
 
 int main()
 {
-    auto hapPtr = std::unique_ptr<Gen::Sequences>(new Gen::HaploidSequences);
-    auto dipPtr = std::unique_ptr<Gen::Sequences>(new Gen::DiploidSequences);
-    test1(hapPtr);
-    test1(dipPtr);
-//    test2();
-
+    test2();
     return 0;
 }
