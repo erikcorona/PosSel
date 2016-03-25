@@ -1,8 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-#include "Sequences.hxx"
-#include "SequencesAlgos.hxx"
+#include "sel/Sequences.hxx"
+#include "sel/SequencesAlgos.hxx"
 
 using namespace std;
 
