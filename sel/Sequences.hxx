@@ -55,7 +55,7 @@ namespace Gen
     {
     public:
         LongSequence(std::vector<std::string>& rsids, std::vector<int>& positions)
-        : ids{rsids}, pos{positions}
+        /*: ids{rsids}*//*, pos{positions}*/
         {
             startI = 0;
             endI   = 0; // exclusive
@@ -83,8 +83,8 @@ namespace Gen
         }
     private:
         int startI, endI;
-        std::vector<std::string>& ids;
-        std::vector<int>& pos;
+//        std::vector<std::string>& ids;
+//        std::vector<int>& pos;
     };
 
     class Sequences
