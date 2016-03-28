@@ -20,7 +20,7 @@ namespace win{
     {
         auto it = std::upper_bound(pos.begin(), pos.end(), chrPos); //---*|---- or //----|-----
         long startI = std::distance(pos.begin(), it);
-        return startI == pos.size() ? startI-1 : startI;
+        return startI == static_cast<int>(pos.size()) ? startI-1 : startI;
     }
 }
 #endif //POSSEL_WINDOWALGOS_HXX

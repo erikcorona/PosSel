@@ -6,6 +6,30 @@
 #include <Sequences.hxx>
 #include <SequencesAlgos.hxx>
 
+TEST(SEQUENCES, almostiHS)
+{
+    auto hapmap = std::make_shared<Gen::HapMapSequences>("hapmap3_r2_b36_fwd.consensus.qc.poly.chr6_ceu.unr.phased");
+
+    hapmap->setBuild("36");
+    hapmap->setChr(6);
+    Gen::GeneticMap genMap(hapmap->getChr());
+
+    assert(hapmap->nSequences() == 34);
+    std::cout << std::endl;
+    for(std::size_t i = 10; i < hapmap->trueSeqLength(); i += 10)
+    {
+        auto aPos = hapmap->getPos(i);
+        double iHS = SeqAlg::almostiHS(hapmap, genMap, i);
+        if(iHS != 0 && iHS == iHS && !std::isinf(iHS))
+        {
+            std::cout << genMap.getcM(aPos) << "\t";
+            std::cout << iHS << std::endl;
+        }
+    }
+
+    std::cout.flush();
+}
+
 TEST(SEQUENCES, integrateEHH)
 {
     auto hapmap = std::make_shared<Gen::HapMapSequences>("hapmap3_r2_b36_fwd.consensus.qc.poly.chr6_ceu.unr.phased");
@@ -14,15 +38,14 @@ TEST(SEQUENCES, integrateEHH)
     hapmap->setChr(6);
     Gen::GeneticMap genMap(hapmap->getChr());
 
-    int cnt{0};
-    constexpr std::size_t step = 15;
-    for(std::size_t i = 0; i < hapmap->trueSeqLength() - step; i+= step)
+    std::cout << std::endl;
+    for(std::size_t i = 10; i < hapmap->trueSeqLength(); i += 10)
     {
-        hapmap->setWindowByIndex(static_cast<std::size_t>(i), i + step);
-        std::cout << genMap.getcM(hapmap->getPos(i)) << "\t" << SeqAlg::D::tajD(hapmap) << std::endl;
+        auto aPos = hapmap->getPos(i);
+        std::cout << genMap.getcM(aPos) << "\t";
+        std::cout << SeqAlg::integrateEHH(hapmap, genMap, i) << std::endl;
     }
 
-    std::cout << cnt << std::endl;
     std::cout.flush();
 }
 

@@ -48,7 +48,9 @@ namespace Gen
 
         std::size_t size(){return static_cast<std::size_t>(endI - startI);}
         auto trueSize(){return seq.size();}
-        char& operator[](std::size_t i)
+
+        template<typename Index>
+        char& operator[](Index i)
         {
             return seq[startI+i];
         }
@@ -67,7 +69,7 @@ namespace Gen
          * @param start inclusive
          * @param end exclusive
          */
-        std::shared_ptr<Sequence> subSeqs(std::size_t start, std::size_t end)
+        void subSeqs(std::size_t start, std::size_t end)
         {
             setWindowByIndex(start,end);
         }
@@ -118,6 +120,12 @@ namespace Gen
             }
         }
 
+        auto getAllSeqs(){ return seqs;}
+        void setSequences(std::vector<std::shared_ptr<Sequence>>& theSeqs)
+        {
+            seqs = theSeqs;
+        }
+
         std::string getString(std::size_t seqIndex)
         {
             return seqs[seqIndex]->getString();
@@ -144,6 +152,7 @@ namespace Gen
             return true;
         }
 
+        std::size_t trueSeqLength(){return seqs[0]->trueSize();}
         std::size_t seqLength(){return seqs[0]->size();}
 
         template<typename Fxn>
@@ -170,9 +179,13 @@ namespace Gen
 
         auto nSequences(){ return seqs.size();}
 
-        auto getPos(std::size_t i) { return pos[i];}
+        template<typename Index>
+        auto getPos(Index i) {
+            return pos[i];
+        }
 
-        Sequences* setWindowByIndex(std::size_t start, std::size_t end)
+        template<typename Index>
+        Sequences* setWindowByIndex(Index start, Index end)
         {
             for(auto& seq : seqs) seq->setWindowByIndex(start,end);
             return this;
@@ -263,13 +276,13 @@ namespace Gen
             int i = win::getIndexBehindOrEqual(pos,chrPos);
             if(chrPos == pos[i])
                 return cM[i];
-            assert(i+1 < pos.size());
+            assert(i+1 < static_cast<int>(pos.size()));
             return cM[i] + (chrPos-pos[i])*(cM[i+1] - cM[i])/(pos[i+1] - pos[i]); // extrapolate cM
         }
 
         double distance(int start, int end)
         {
-            assert(end > start);
+            assert(end >= start);
             double val = getcM(start) - getcM(end);
             return val >= 0 ? val : -val;
         }

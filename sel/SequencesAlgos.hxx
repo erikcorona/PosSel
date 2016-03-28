@@ -21,7 +21,7 @@ namespace SeqAlg
         auto c = seqs->nSequences(); // c is for num of core haplotypes
         assert(c > 0);
 
-        for(int i = 0; i < c; i++)
+        for(std::size_t i = 0; i < c; i++)
             hapCounts[seqs->getString(i)]++;
 
         double num{0};
@@ -30,29 +30,80 @@ namespace SeqAlg
         return num/(c*(c-1)/2);
     }
 
+    double areaUC(std::vector<double> w, std::vector<double> h)
+    {
+        double auc{0};
+        for(std::size_t i = 1; i < h.size(); i++)
+        {
+            assert(w[i] > w[i-1]);
+            double y = (h[i] + h[i-1])/2;
+            auc += (w[i] - w[i-1])*y;
+        }
+        return auc;
+    }
     /**
      * Contract:
      * map and seqs are both referencing the same build
      */
-    double integrateEHH(std::shared_ptr<Gen::Sequences> seqs, Gen::GeneticMap& map, std::size_t idx)
+    template<typename Index>
+    double integrateEHH(std::shared_ptr<Gen::Sequences> seqs, Gen::GeneticMap& map, Index idx)
     {
         std::vector<double> ehhScores;
         std::vector<double> distances;
-        std::size_t start{idx}, end{idx+1};
+        int start{static_cast<int>(idx)}, end{static_cast<int>(idx+1)};
         do{
-            distances.push_back(map.distance(seqs->getPos(start), seqs->getPos(end-1)));
+            auto startPos = seqs->getPos(start);
+            distances.push_back(map.distance(startPos, seqs->getPos(end-1)));
             ehhScores.push_back(ehh(seqs->setWindowByIndex(start--,end)));
         }while(ehhScores.back() >= 0.05 && start >= 0);
 
-        double auc{0};
-        for(int i = 1; i < ehhScores.size(); i++)
-        {
-            assert(distances[i] > distances[i-1]);
-            double x = distances[i] - distances[i-1];
-            double y = (ehhScores[i] + ehhScores[i-1])/2;
-            auc += x*y;
-        }
+        double auc =  areaUC(distances, ehhScores);
+
+        ehhScores.clear();
+        distances.clear();
+        assert(ehhScores.size() == 0);
+        start = idx;
+        end = idx+1;
+        do{
+            distances.push_back(map.distance(seqs->getPos(start), seqs->getPos(end-1)));
+            ehhScores.push_back(ehh(seqs->setWindowByIndex(start,end++)));
+        }while(ehhScores.back() >= 0.05 && end <= static_cast<int>(seqs->trueSeqLength()));
+
+        auc += areaUC(distances, ehhScores);
         return auc;
+    }
+
+    template<typename Index>
+    double almostiHS(std::shared_ptr<Gen::Sequences> seqs, Gen::GeneticMap& map, Index idx)
+    {
+        assert(seqs->nSequences() > 20);
+        std::vector<std::shared_ptr<Gen::Sequence>> ogSeqs = seqs->getAllSeqs();
+        std::vector<std::shared_ptr<Gen::Sequence>> seqsA, seqsB;
+
+        for(auto& aSeq : ogSeqs)
+        {
+            Gen::Sequence& s = *aSeq;
+            if (s[idx] == seqs->allele(0, idx))
+                seqsA.push_back(aSeq);
+            else
+                seqsB.push_back(aSeq);
+        }
+
+        double ret;
+        if(seqsA.size() >= 6 && seqsB.size() >= 6)
+//        if(seqsA.size() >= ogSeqs.size()*0.05 && seqsB.size() >= ogSeqs.size()*0.05)
+        {
+            seqs->setSequences(seqsA);
+            double a = integrateEHH(seqs, map, idx);
+            seqs->setSequences(seqsB);
+            double b = integrateEHH(seqs, map, idx);
+            ret = log(a/b);
+        }
+        else
+            ret = 0;
+
+        seqs->setSequences(ogSeqs);
+        return ret;
     }
 
     // Tajima's D-----------------------------------------
