@@ -6,22 +6,33 @@
 #include <Sequences.hxx>
 #include <SequencesAlgos.hxx>
 
+TEST(SEQUENCES, EHH)
+{
+    using namespace Gen;
+    auto hapmap = std::make_shared<Gen::HapMapSequences>("hapmap3_r2_b36_fwd.consensus.qc.poly.chr19_ceu.unr.phased");
+    hapmap->setBuild("b36");
+    hapmap->setChr(19);
+    ASSERT_TRUE(hapmap->nSequences() > 0);
+    hapmap->setWindowByIndex(100,101);
+    EXPECT_NEAR(SeqAlg::ehh(hapmap), 0.51336898395, 0.00000001);
+}
+
 TEST(SEQUENCES, tajimasD)
 {
     using namespace Gen;
     using SeqPtr = std::shared_ptr<Sequence>;
 
-    auto seqs = std::unique_ptr<Gen::Sequences>(new Gen::DiploidSequences);
-    seqs->addSeq(SeqPtr(new StrSequence("ATAATAAAAAAATAATAAAAAAATAAAAAAAATAAAAAAAA")));//, "sub0");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAAAAAATAAATAATAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub1");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAATAAAAATATAATAAAAAAATATAAAAAAAAAAAAAAA")));//, "sub2");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAAAAAAAAAATAATAAAAAAATAAATAAATAAAAAAAAA")));//, "sub3");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAATAAAAAAAATATAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub4");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAATAAAAAAAAAATAAAAAAAAAAAAAAAAAAATAAAAA")));//, "sub5");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAAAATAAAAATAATAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub6");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAAAAAAAAAAAAATAAAAAAATAAAAAAAAAAAAAAATA")));//, "sub7");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAAAAAAAAAAAAAAAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub8");
-    seqs->addSeq(SeqPtr(new StrSequence("AAAAAAAAAAAAAAATAAAAAAATAATAAAAAAAAAAAAAA")));//, "sub9");
+    auto seqs = std::shared_ptr<Gen::Sequences>(new Gen::DiploidSequences);
+    seqs->addSeq(SeqPtr(new Sequence("ATAATAAAAAAATAATAAAAAAATAAAAAAAATAAAAAAAA")));//, "sub0");
+    seqs->addSeq(SeqPtr(new Sequence("AAAAAAAATAAATAATAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub1");
+    seqs->addSeq(SeqPtr(new Sequence("AAAATAAAAATATAATAAAAAAATATAAAAAAAAAAAAAAA")));//, "sub2");
+    seqs->addSeq(SeqPtr(new Sequence("AAAAAAAAAAAATAATAAAAAAATAAATAAATAAAAAAAAA")));//, "sub3");
+    seqs->addSeq(SeqPtr(new Sequence("AAAATAAAAAAAATATAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub4");
+    seqs->addSeq(SeqPtr(new Sequence("AAAATAAAAAAAAAATAAAAAAAAAAAAAAAAAAATAAAAA")));//, "sub5");
+    seqs->addSeq(SeqPtr(new Sequence("AAAAAATAAAAATAATAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub6");
+    seqs->addSeq(SeqPtr(new Sequence("AAAAAAAAAAAAAAATAAAAAAATAAAAAAAAAAAAAAATA")));//, "sub7");
+    seqs->addSeq(SeqPtr(new Sequence("AAAAAAAAAAAAAAAAAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub8");
+    seqs->addSeq(SeqPtr(new Sequence("AAAAAAAAAAAAAAATAAAAAAATAATAAAAAAAAAAAAAA")));//, "sub9");
 
     constexpr double err = 0.0000000001;
 
@@ -36,4 +47,24 @@ TEST(SEQUENCES, tajimasD)
     EXPECT_NEAR(SeqAlg::D::c2(seqs->nSequences()), 0.047226772001328048, err);
     EXPECT_NEAR(SeqAlg::D::e1(seqs->nSequences()), 0.019060533801591818, err);
     EXPECT_NEAR(SeqAlg::D::e2(seqs->nSequences()), 0.0049489277698963303, err);
+}
+
+TEST(SEQUENCES, initialization)
+{
+    using namespace Gen;
+    using SeqPtr = std::shared_ptr<Sequence>;
+
+    auto seqs = std::shared_ptr<Gen::Sequences>(new Gen::DiploidSequences);
+    seqs->addSeq(SeqPtr(new Sequence("ATAATAAAAAAATAATAAAAAAATAAAAAAAATAAAAAAAA")));//, "sub0");
+    seqs->addSeq(SeqPtr(new Sequence("AAAAAAAATAAATAATAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub1");
+    seqs->addSeq(SeqPtr(new Sequence("AAAATAAAAATATAATAAAAAAATATAAAAAAAAAAAAAAA")));//, "sub2");
+    seqs->addSeq(SeqPtr(new Sequence("AAAAAAAAAAAATAATAAAAAAATAAATAAATAAAAAAAAA")));//, "sub3");
+    seqs->addSeq(SeqPtr(new Sequence("AAAATAAAAAAAATATAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub4");
+    seqs->addSeq(SeqPtr(new Sequence("AAAATAAAAAAAAAATAAAAAAAAAAAAAAAAAAATAAAAA")));//, "sub5");
+    seqs->addSeq(SeqPtr(new Sequence("AAAAAATAAAAATAATAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub6");
+    seqs->addSeq(SeqPtr(new Sequence("AAAAAAAAAAAAAAATAAAAAAATAAAAAAAAAAAAAAATA")));//, "sub7");
+    seqs->addSeq(SeqPtr(new Sequence("AAAAAAAAAAAAAAAAAAAAAAATAAAAAAAAAAAAAAAAA")));//, "sub8");
+    seqs->addSeq(SeqPtr(new Sequence("AAAAAAAAAAAAAAATAAAAAAATAATAAAAAAAAAAAAAA")));//, "sub9");
+
+    ASSERT_TRUE(seqs->allele(0,0) == 'A');
 }

@@ -24,6 +24,8 @@ namespace Gen
         Sequence(std::string s)
         {
             seq = s;
+            startI = 0;
+            endI = s.size();
         }
 
         Sequence(std::vector<std::string>& rsids, std::vector<int>& positions)
@@ -115,9 +117,9 @@ namespace Gen
             }
         }
 
-        std::string getString(std::size_t i)
+        std::string getString(std::size_t seqIndex)
         {
-            return seqs[i]->getString();
+            return seqs[seqIndex]->getString();
         }
 
         /**

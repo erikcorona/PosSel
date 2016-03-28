@@ -22,13 +22,7 @@ namespace SeqAlg
         assert(c > 0);
 
         for(int i = 0; i < c; i++)
-        {
-            std::string hap = seqs->getString(i);
-            if(!hapCounts.count(hap))
-                hapCounts[hap] = 0;
-            else
-                hapCounts[hap]++;
-        }
+            hapCounts[seqs->getString(i)]++;
 
         double num{0};
         for(auto& p : hapCounts)
@@ -58,6 +52,7 @@ namespace SeqAlg
             double y = (ehhScores[i] + ehhScores[i-1])/2;
             auc += x*y;
         }
+        return auc;
     }
 
     // Tajima's D-----------------------------------------
