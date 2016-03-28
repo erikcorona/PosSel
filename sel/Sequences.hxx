@@ -89,6 +89,7 @@ namespace Gen
         }
 
         void setChr(short chromosome){ chr = chromosome;}
+        auto getChr(){ return chr;}
 
     protected:
         short chr;
@@ -253,7 +254,7 @@ namespace Gen
         {
             chr = chromosome;
             ensureDataExists();
-//            readInData();
+            readInData();
         }
 
         double getcM(int chrPos)
@@ -276,6 +277,31 @@ namespace Gen
         bool dataExists(){ return dataExists(dataSetPath());}
 
     private:
+
+        void readInData()
+        {
+            std::ifstream file;
+            file.open(dataSetPath());
+            if(file.is_open())
+            {
+                boost::char_separator<char> sep(" ");
+                std::string line;
+                if(!file.eof()) getline(file, line); // skip header
+
+                while(!file.eof())
+                {
+                    getline(file,line);
+
+                    if(line.size() < 1) // skip blank lines
+                        continue;
+                    boost::tokenizer<boost::char_separator<char>> tokens(line, sep);
+                    std::vector<std::string> row(tokens.begin(), tokens.end());
+                    assert(row.size() > 0);
+                    pos.push_back(atoi(row[0].c_str()));
+                    cM.push_back(atof(row[2].c_str()));
+                }
+            }
+        }
 
         std::vector<double> cM; // first index is chr, 2nd is the position
         void ensureDataExists()

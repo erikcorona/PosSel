@@ -6,6 +6,26 @@
 #include <Sequences.hxx>
 #include <SequencesAlgos.hxx>
 
+TEST(SEQUENCES, integrateEHH)
+{
+    auto hapmap = std::make_shared<Gen::HapMapSequences>("hapmap3_r2_b36_fwd.consensus.qc.poly.chr6_ceu.unr.phased");
+
+    hapmap->setBuild("36");
+    hapmap->setChr(6);
+    Gen::GeneticMap genMap(hapmap->getChr());
+
+    int cnt{0};
+    constexpr std::size_t step = 15;
+    for(std::size_t i = 0; i < hapmap->trueSeqLength() - step; i+= step)
+    {
+        hapmap->setWindowByIndex(static_cast<std::size_t>(i), i + step);
+        std::cout << genMap.getcM(hapmap->getPos(i)) << "\t" << SeqAlg::D::tajD(hapmap) << std::endl;
+    }
+
+    std::cout << cnt << std::endl;
+    std::cout.flush();
+}
+
 TEST(SEQUENCES, EHH)
 {
     using namespace Gen;

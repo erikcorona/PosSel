@@ -14,6 +14,17 @@ TEST(GENETICMAP, GENETICMAP_DOWNLOAD_Test)
     }
 }
 
+TEST(GENETICMAP, GENETICMAP_pos_Test)
+{
+
+    Gen::GeneticMap genMap(6);
+    ASSERT_TRUE(genMap.dataExists());
+
+    EXPECT_EQ(genMap.getcM(94609), 0);
+    EXPECT_NEAR(genMap.getcM((94609+95272)/2), 0.000216512, 0.000001);
+    EXPECT_NEAR(genMap.getcM(95272), 0.000433679, 0.00001);
+}
+
 TEST(SEQUENCES, SEQUENCES_ISVALID_Test)
 {
     using namespace Gen;
