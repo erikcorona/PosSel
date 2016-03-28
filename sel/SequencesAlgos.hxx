@@ -14,7 +14,7 @@ namespace SeqAlg
      * @param seqs the sequences used to compute ehh
      */
     template<typename SeqsPtr>
-    double ehh(SeqsPtr& seqs)
+    double ehh(SeqsPtr seqs)
     {
         std::unordered_map<std::string, std::size_t> hapCounts;
 
@@ -36,9 +36,28 @@ namespace SeqAlg
         return num/(c*(c-1)/2);
     }
 
-    double integrateEHH(std::shared_ptr<Gen::Sequences> ptr, Gen::GeneticMap& map)
+    /**
+     * Contract:
+     * map and seqs are both referencing the same build
+     */
+    double integrateEHH(std::shared_ptr<Gen::Sequences> seqs, Gen::GeneticMap& map, std::size_t idx)
     {
-        
+        std::vector<double> ehhScores;
+        std::vector<double> distances;
+        std::size_t start{idx}, end{idx+1};
+        do{
+            distances.push_back(map.distance(seqs->getPos(start), seqs->getPos(end-1)));
+            ehhScores.push_back(ehh(seqs->setWindowByIndex(start--,end)));
+        }while(ehhScores.back() >= 0.05 && start >= 0);
+
+        double auc{0};
+        for(int i = 1; i < ehhScores.size(); i++)
+        {
+            assert(distances[i] > distances[i-1]);
+            double x = distances[i] - distances[i-1];
+            double y = (ehhScores[i] + ehhScores[i-1])/2;
+            auc += x*y;
+        }
     }
 
     // Tajima's D-----------------------------------------

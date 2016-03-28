@@ -8,7 +8,7 @@ using namespace std;
 
 void test2()
 {
-    auto hapmap = std::make_unique<Gen::HapMapSequences>("hapmap3_r2_b36_fwd.consensus.qc.poly.chr19_ceu.unr.phased");
+    auto hapmap = std::make_shared<Gen::HapMapSequences>("hapmap3_r2_b36_fwd.consensus.qc.poly.chr19_ceu.unr.phased");
     hapmap->setBuild("36");
     hapmap->setChr(19);
 

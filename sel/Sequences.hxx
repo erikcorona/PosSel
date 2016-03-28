@@ -21,44 +21,23 @@ namespace Gen
     class Sequence
     {
     public:
-
-        Sequence(){}
         Sequence(std::string s)
         {
             seq = s;
-        };
+        }
+
+        Sequence(std::vector<std::string>& rsids, std::vector<int>& positions)
+        : ids{rsids}, pos{positions}
+        {
+            startI = 0;
+            endI   = 0; // exclusive
+        }
 
         void addAllele(char allele)
         {
             if(allele != 'A' && allele != 'C' && allele != 'G' && allele != 'T')
                 assert(false);
             seq += allele;
-        }
-
-        virtual std::string getString()=0;
-        virtual char& operator[](std::size_t i)=0;
-        virtual std::size_t size()=0;
-    protected:
-        std::string seq;
-    };
-
-    class StrSequence : public Sequence
-    {
-    public:
-        StrSequence(std::string s) : Sequence(s) { }
-        char& operator[](std::size_t i) { return seq[i];}
-        std::size_t size(){return seq.size();}
-        std::string getString(){return seq;}
-    };
-
-    class LongSequence : public Sequence
-    {
-    public:
-        LongSequence(std::vector<std::string>& rsids, std::vector<int>& positions)
-        /*: ids{rsids}*//*, pos{positions}*/
-        {
-            startI = 0;
-            endI   = 0; // exclusive
         }
 
         std::string getString(){
@@ -81,13 +60,41 @@ namespace Gen
             startI = startIndex;
             endI = endIndex;
         }
+
+        /**
+         * @param start inclusive
+         * @param end exclusive
+         */
+        std::shared_ptr<Sequence> subSeqs(std::size_t start, std::size_t end)
+        {
+            setWindowByIndex(start,end);
+        }
+
     private:
         int startI, endI;
-//        std::vector<std::string>& ids;
-//        std::vector<int>& pos;
+        std::vector<std::string> ids; //@todo make this a ptr
+        std::vector<int> pos;         //@todo make this a ptr
+        std::string seq; //@todo make shared ptr
     };
 
-    class Sequences
+    class PositionSequences
+    {
+
+    public:
+        void setBuild(std::string theBuild)
+        {
+            build = theBuild;
+        }
+
+        void setChr(short chromosome){ chr = chromosome;}
+
+    protected:
+        short chr;
+        std::vector<int> pos;
+        std::string build;
+    };
+
+    class Sequences : public PositionSequences
     {
         friend class HaploidSequences;
         friend class DiploidSequences;
@@ -159,15 +166,23 @@ namespace Gen
         }
 
         auto nSequences(){ return seqs.size();}
+
+        auto getPos(std::size_t i) { return pos[i];}
+
+        Sequences* setWindowByIndex(std::size_t start, std::size_t end)
+        {
+            for(auto& seq : seqs) seq->setWindowByIndex(start,end);
+            return this;
+        }
         virtual std::size_t nOrganisms()=0;
         virtual void addOrganism(Sequences& sequences, int orgI)=0;
 
     protected:
         std::vector<std::shared_ptr<Sequence>> seqs;
 
-        virtual std::unique_ptr<Sequences> uniq_new()=0;
+        virtual std::shared_ptr<Sequences> uniq_new()=0;
 
-        std::unique_ptr<Sequences> randomSitesClone()
+        std::shared_ptr<Sequences> randomSitesClone()
         {
             static boost::random::mt19937 rng(2);
             boost::random::uniform_int_distribution<> sites(0,static_cast<int>(seqLength())-1);
@@ -180,7 +195,7 @@ namespace Gen
             }
             return copy;
         }
-        std::unique_ptr<Sequences> sample()
+        std::shared_ptr<Sequences> sample()
         {
             static boost::random::mt19937 rng(1);
             boost::random::uniform_int_distribution<> org(0,static_cast<int>(nOrganisms())-1);
@@ -193,7 +208,7 @@ namespace Gen
             return sequences;
         }
 
-        virtual std::unique_ptr<Sequences> clone()=0;
+        virtual std::shared_ptr<Sequences> clone()=0;
     };
 
     class HaploidSequences : public Sequences
@@ -215,34 +230,19 @@ namespace Gen
         std::size_t nOrganisms() { return seqs.size();}
 
     protected:
-        std::unique_ptr<Sequences> clone()
+        std::shared_ptr<Sequences> clone()
         {
-            return std::unique_ptr<Sequences>(new HaploidSequences(*this));
+            return std::shared_ptr<Sequences>(new HaploidSequences(*this));
         }
 
     private:
-        std::unique_ptr<Sequences> uniq_new()
+        std::shared_ptr<Sequences> uniq_new()
         {
-            return std::unique_ptr<Sequences>(new HaploidSequences());
+            return std::shared_ptr<Sequences>(new HaploidSequences());
         }
     };
 
-    class PositionSequences
-    {
 
-    public:
-        void setBuild(std::string theBuild)
-        {
-            build = theBuild;
-        }
-
-        void setChr(short chromosome){ chr = chromosome;}
-
-    protected:
-        short chr;
-        std::vector<int> pos;
-        std::string build;
-    };
 
     class GeneticMap : public PositionSequences
     {
@@ -310,7 +310,7 @@ namespace Gen
 
 
 
-class HapMapSequences : public HaploidSequences, public PositionSequences
+class HapMapSequences : public HaploidSequences
     {
     public:
 
@@ -333,7 +333,7 @@ class HapMapSequences : public HaploidSequences, public PositionSequences
 
                 seqs.resize(numSeqs);
                 for(std::size_t i = 0; i < numSeqs; i++)
-                    seqs[i] = std::shared_ptr<Sequence>(new LongSequence(rsids, pos));
+                    seqs[i] = std::shared_ptr<Sequence>(new Sequence(rsids, pos));
 
                 while(!file.eof())
                 {
@@ -356,7 +356,7 @@ class HapMapSequences : public HaploidSequences, public PositionSequences
 
         auto trueSeqLength()
         {
-            return static_cast<LongSequence*>(seqs[0].get())->trueSize();
+            return static_cast<Sequence*>(seqs[0].get())->trueSize();
         }
 
         /**
@@ -368,8 +368,8 @@ class HapMapSequences : public HaploidSequences, public PositionSequences
         {
             for(auto& seq : seqs)
             {
-                LongSequence* ls;
-                ls = static_cast<LongSequence*>(seq.get());
+                Sequence* ls;
+                ls = static_cast<Sequence*>(seq.get());
                 ls->setWindowByIndex(startIndex, endIndex);
             }
         }
@@ -398,22 +398,22 @@ class HapMapSequences : public HaploidSequences, public PositionSequences
                 addSeq(seq);
         }
 
-        void addOrganism(Sequences &sequences, int i)
+        void addOrganism(Sequences& sequences, int i)
         {
             seqs.push_back(sequences.seqs[i*2]);
             seqs.push_back(sequences.seqs[i*2 + 1]);
         }
 
     protected:
-        std::unique_ptr<Sequences> clone()
+        std::shared_ptr<Sequences> clone()
         {
-            return std::unique_ptr<Sequences>(new DiploidSequences(*this));
+            return std::shared_ptr<Sequences>(new DiploidSequences(*this));
         }
 
     private:
-        std::unique_ptr<Sequences> uniq_new()
+        std::shared_ptr<Sequences> uniq_new()
         {
-            return std::unique_ptr<Sequences>(new DiploidSequences());
+            return std::shared_ptr<Sequences>(new DiploidSequences());
         }
 
         std::size_t nOrganisms() { return seqs.size()/2;}
