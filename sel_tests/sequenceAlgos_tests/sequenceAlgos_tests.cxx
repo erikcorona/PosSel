@@ -7,47 +7,13 @@
 #include <SequencesAlgos.hxx>
 
 
-TEST(SEQUENCES, almostiHS2)
-{
-    auto hapmap = std::make_shared<Gen::HapMapSequences>("hapmap3_r2_b36_fwd.consensus.qc.poly.chr6_ceu.unr.phased");
-    auto hapmap2 = std::make_shared<Gen::HapMapSequences>("hapmap3_r2_b36_fwd.consensus.qc.poly.chr6_ceu.unr.phased");
-
-    hapmap->setBuild("36");
-    hapmap->setChr(6);
-    hapmap2->setBuild("36");
-    hapmap2->setChr(6);
-
-    Gen::GeneticMap genMap(hapmap->getChr());
-
-    assert(hapmap->nSequences() == 34);
-    std::cout << std::endl;
-    for(std::size_t i = 10; i < hapmap->trueSeqLength(); i += 10)
-    {
-        auto aPos = hapmap->getPos(i);
-        double iHS2 = SeqAlg::almostiHS2(hapmap, genMap, i);
-        ASSERT_TRUE(static_cast<Gen::Sequences*>(hapmap.get())->operator==(static_cast<Gen::Sequences*>(hapmap2.get())));
-        ASSERT_TRUE((*hapmap) == hapmap2.get());
-        double iHS  = SeqAlg::almostiHS(hapmap, genMap, i);
-
-//        if(!std::isinf(iHS))
-//        {
-            if(!std::isinf(iHS)) ASSERT_NEAR(iHS, iHS2, 0.001);
-            std::cout << i << "\t";
-            std::cout << aPos << "\t";
-            std::cout << genMap.getcM(aPos) << "\t";
-            std::cout << iHS << std::endl;
-//        }
-    }
-
-    std::cout.flush();
-}
-
 TEST(SEQUENCES, almostiHS)
 {
     auto hapmap = std::make_shared<Gen::HapMapSequences>("hapmap3_r2_b36_fwd.consensus.qc.poly.chr6_ceu.unr.phased");
 
     hapmap->setBuild("36");
     hapmap->setChr(6);
+
     Gen::GeneticMap genMap(hapmap->getChr());
 
     assert(hapmap->nSequences() == 34);
@@ -55,7 +21,8 @@ TEST(SEQUENCES, almostiHS)
     for(std::size_t i = 10; i < hapmap->trueSeqLength(); i += 10)
     {
         auto aPos = hapmap->getPos(i);
-        double iHS = SeqAlg::almostiHS(hapmap, genMap, i);
+        double iHS  = SeqAlg::almostiHS(hapmap, genMap, i);
+
         if(!std::isinf(iHS))
         {
             std::cout << genMap.getcM(aPos) << "\t";

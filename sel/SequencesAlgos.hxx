@@ -165,7 +165,7 @@ namespace SeqAlg
     }
 
     template<typename Index>
-    double almostiHS2(std::shared_ptr<Gen::Sequences> seqs, Gen::GeneticMap& map, Index idx)
+    double almostiHS(std::shared_ptr<Gen::Sequences> seqs, Gen::GeneticMap& map, Index idx)
     {
         assert(seqs->nSequences() > 20);
         auto cloneA = seqs->clone();
@@ -183,37 +183,6 @@ namespace SeqAlg
         else
             ret = std::numeric_limits<double>::infinity();
 
-        return ret;
-    }
-
-    template<typename Index>
-    double almostiHS(std::shared_ptr<Gen::Sequences> seqs, Gen::GeneticMap& map, Index idx)
-    {
-        assert(seqs->nSequences() > 20);
-        std::vector<std::shared_ptr<Gen::Sequence>> ogSeqs = seqs->getAllSeqs();
-        std::vector<std::shared_ptr<Gen::Sequence>> seqsA, seqsB;
-
-        for(auto& aSeq : ogSeqs)
-        {
-            if (aSeq->allele(idx, seqs->getStartI()) == seqs->allele(0, idx))
-                seqsA.push_back(aSeq);
-            else
-                seqsB.push_back(aSeq);
-        }
-
-        double ret;
-        if(seqsA.size() > 4 && seqsB.size() > 4)
-        {
-            seqs->setSequences(seqsA);
-            double a = integrateEHH(seqs, map, idx);
-            seqs->setSequences(seqsB);
-            double b = integrateEHH(seqs, map, idx);
-            ret = log(a/b);
-        }
-        else
-            ret = std::numeric_limits<double>::infinity();
-
-        seqs->setSequences(ogSeqs);
         return ret;
     }
 }
