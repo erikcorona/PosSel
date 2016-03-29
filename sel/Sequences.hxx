@@ -155,17 +155,6 @@ namespace Gen
         std::size_t trueSeqLength(){return seqs[0]->trueSize();}
         std::size_t seqLength(){return seqs[0]->size();}
 
-        template<typename Fxn>
-        std::vector<std::unique_ptr<Sequences>> sortedSamples(std::size_t n, Fxn sorter)
-        {
-            std::vector<std::unique_ptr<Sequences>> vec(n);
-
-            for(auto& v : vec)
-                v = sample();
-            std::sort(vec.begin(), vec.end(), sorter);
-            return vec;
-        }
-
         bool isSegregating(std::size_t i)
         {
             char ref = (*seqs[0])[i];
@@ -191,7 +180,6 @@ namespace Gen
             return this;
         }
         virtual std::size_t nOrganisms()=0;
-        virtual void addOrganism(Sequences& sequences, int orgI)=0;
 
     protected:
         std::vector<std::shared_ptr<Sequence>> seqs;
@@ -210,18 +198,6 @@ namespace Gen
                     (*copy->seqs[seqI].get())[i] = (*seqs[seqI].get())[siteIndex];
             }
             return copy;
-        }
-        std::shared_ptr<Sequences> sample()
-        {
-            static boost::random::mt19937 rng(1);
-            boost::random::uniform_int_distribution<> org(0,static_cast<int>(nOrganisms())-1);
-
-            auto sequences = uniq_new();
-
-            auto tmp = randomSitesClone();
-            for(std::size_t i = 0; i < nOrganisms(); i++)
-                sequences->addOrganism(*tmp, org(rng));
-            return sequences;
         }
 
         virtual std::shared_ptr<Sequences> clone()=0;
@@ -257,8 +233,6 @@ namespace Gen
             return std::shared_ptr<Sequences>(new HaploidSequences());
         }
     };
-
-
 
     class GeneticMap : public PositionSequences
     {
@@ -325,7 +299,7 @@ namespace Gen
 
         void download(std::string path)
         {
-            system(std::string(std::string("wget ") +
+            int res = system(std::string(std::string("wget ") +
                            std::string("https://hapmap.ncbi.nlm.nih.gov/downloads/recombination/latest/rates/genetic_map_chr") +
                            std::to_string(chr) +
                            std::string("_b36.txt ") +
@@ -349,9 +323,33 @@ namespace Gen
         }
     };
 
+    class DiploidSequences : public Sequences
+    {
+    public:
 
+        DiploidSequences(){}
+        DiploidSequences(DiploidSequences& other)
+        {
+            for(auto& seq : other.seqs)
+                addSeq(seq);
+        }
 
-class HapMapSequences : public HaploidSequences
+    protected:
+        std::shared_ptr<Sequences> clone()
+        {
+            return std::shared_ptr<Sequences>(new DiploidSequences(*this));
+        }
+
+    private:
+        std::shared_ptr<Sequences> uniq_new()
+        {
+            return std::shared_ptr<Sequences>(new DiploidSequences());
+        }
+
+        std::size_t nOrganisms() { return seqs.size()/2;}
+    };
+
+class HapMapSequences : public DiploidSequences
     {
     public:
 
@@ -428,37 +426,7 @@ class HapMapSequences : public HaploidSequences
         std::vector<std::string> rsids;
     };
 
-    class DiploidSequences : public Sequences
-    {
-    public:
 
-        DiploidSequences(){}
-        DiploidSequences(DiploidSequences& other)
-        {
-            for(auto& seq : other.seqs)
-                addSeq(seq);
-        }
-
-        void addOrganism(Sequences& sequences, int i)
-        {
-            seqs.push_back(sequences.seqs[i*2]);
-            seqs.push_back(sequences.seqs[i*2 + 1]);
-        }
-
-    protected:
-        std::shared_ptr<Sequences> clone()
-        {
-            return std::shared_ptr<Sequences>(new DiploidSequences(*this));
-        }
-
-    private:
-        std::shared_ptr<Sequences> uniq_new()
-        {
-            return std::shared_ptr<Sequences>(new DiploidSequences());
-        }
-
-        std::size_t nOrganisms() { return seqs.size()/2;}
-    };
 }
 
 #endif //POSSEL_SEQUENCES_HXX

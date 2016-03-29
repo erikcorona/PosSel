@@ -20,7 +20,7 @@ TEST(SEQUENCES, almostiHS)
     {
         auto aPos = hapmap->getPos(i);
         double iHS = SeqAlg::almostiHS(hapmap, genMap, i);
-        if(iHS != 0 && iHS == iHS && !std::isinf(iHS))
+        if(!std::isinf(iHS))
         {
             std::cout << genMap.getcM(aPos) << "\t";
             std::cout << iHS << std::endl;
