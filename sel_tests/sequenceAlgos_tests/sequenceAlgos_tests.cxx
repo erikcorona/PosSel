@@ -29,13 +29,14 @@ TEST(SEQUENCES, almostiHS2)
         ASSERT_TRUE((*hapmap) == hapmap2.get());
         double iHS  = SeqAlg::almostiHS(hapmap, genMap, i);
 
-        if(!std::isinf(iHS))
-        {
-            ASSERT_NEAR(iHS, iHS2, 0.001);
+//        if(!std::isinf(iHS))
+//        {
+            if(!std::isinf(iHS)) ASSERT_NEAR(iHS, iHS2, 0.001);
+            std::cout << i << "\t";
             std::cout << aPos << "\t";
             std::cout << genMap.getcM(aPos) << "\t";
             std::cout << iHS << std::endl;
-        }
+//        }
     }
 
     std::cout.flush();
