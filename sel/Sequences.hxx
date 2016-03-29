@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <boost/random.hpp>
+#include <boost/range/algorithm_ext/erase.hpp>
 #include <iostream>
 #include <string>
 #include <unordered_map>
@@ -24,15 +25,31 @@ namespace Gen
         Sequence(std::string s)
         {
             seq = s;
-            startI = 0;
-            endI = s.size();
+//            startI = 0;
+//            endI = static_cast<int>(s.size());
         }
 
-        Sequence(std::vector<std::string>& rsids, std::vector<int>& positions)
-        : ids{rsids}, pos{positions}
+        Sequence()
         {
-            startI = 0;
-            endI   = 0; // exclusive
+//            startI = 0;
+//            endI   = 0; // exclusive
+        }
+
+        bool operator==(Sequence* b)
+        {
+//            assert(startI == b->startI && endI == b->endI);
+//            if(startI != b->startI)
+//                return false;
+//
+//            if(endI != b->endI)
+//                return false;
+
+            return seq == b->seq;
+        }
+
+        bool operator !=(Sequence* b)
+        {
+            return !(this->operator==(b));
         }
 
         void addAllele(char allele)
@@ -42,49 +59,83 @@ namespace Gen
             seq += allele;
         }
 
-        std::string getString(){
+        std::string getString(std::size_t startI, std::size_t endI){
             return seq.substr(static_cast<std::size_t>(startI), static_cast<std::size_t>(endI-startI));
         }
 
-        std::size_t size(){return static_cast<std::size_t>(endI - startI);}
+//        std::size_t size(){return static_cast<std::size_t>(endI - startI);}
         auto trueSize(){return seq.size();}
 
         template<typename Index>
-        char& operator[](Index i)
+        char& allele(Index i, std::size_t startOffset)
         {
-            return seq[startI+i];
+            return seq[startOffset+i];
         }
 
         /**
          * @param startIndex inclusive
          * @param endIndex exclusive
          */
-        void setWindowByIndex(int startIndex, int endIndex)
-        {
-            startI = startIndex;
-            endI = endIndex;
-        }
+//        void setWindowByIndex(int startIndex, int endIndex)
+//        {
+//            startI = startIndex;
+//            endI = endIndex;
+//        }
 
         /**
          * @param start inclusive
          * @param end exclusive
          */
-        void subSeqs(std::size_t start, std::size_t end)
-        {
-            setWindowByIndex(start,end);
-        }
+//        void subSeqs(std::size_t start, std::size_t end)
+//        {
+//            setWindowByIndex(start,end);
+//        }
 
     private:
-        int startI, endI;
-        std::vector<std::string> ids; //@todo make this a ptr
-        std::vector<int> pos;         //@todo make this a ptr
-        std::string seq; //@todo make shared ptr
+//        int startI, endI;
+        std::string seq;
     };
 
     class PositionSequences
     {
 
     public:
+        PositionSequences(PositionSequences* other)
+        {
+            pos = other->pos;
+            chr = other->chr;
+            build = other->build;
+        }
+
+        bool operator==(PositionSequences* b)
+        {
+            assert(pos->size() == b->pos->size());
+            if (pos->size() != b->pos->size())
+                return false;
+
+            assert(chr == b->chr);
+            if(chr != b->chr)
+                return false;
+
+            assert(build == b->build);
+            if(build != b->build)
+                return false;
+
+            for(std::size_t i = 0; i < pos->size(); i++)
+            {
+
+                assert((*pos)[i] == (*(b->pos))[i]);
+                if ((*pos)[i] != (*(b->pos))[i])
+                    return false;
+            }
+            return true;
+        }
+
+        PositionSequences()
+        {
+            pos = std::make_shared<std::vector<int>>();
+        }
+
         void setBuild(std::string theBuild)
         {
             build = theBuild;
@@ -95,7 +146,7 @@ namespace Gen
 
     protected:
         short chr;
-        std::vector<int> pos;
+        std::shared_ptr<std::vector<int>> pos;
         std::string build;
     };
 
@@ -105,9 +156,48 @@ namespace Gen
         friend class DiploidSequences;
     public:
 
+        Sequences()
+        {
+            seqs = std::vector<std::shared_ptr<Sequence>>();
+            startI = 0;
+            endI   = 0;
+        }
+
+        Sequences(Sequences* other)
+        : PositionSequences(static_cast<PositionSequences*>(other))
+        {
+            startI = other->startI;
+            endI   = other->endI;
+            for(auto s : seqs)
+                seqs.push_back(s);
+        }
+
+        bool operator==(Sequences* b)
+        {
+            assert(b->seqs.size() == seqs.size());
+            if(b->seqs.size() != seqs.size())
+                return false;
+
+            if(startI != b->endI)
+                return false;
+
+            if(endI != b->endI)
+                return false;
+
+            for(std::size_t i = 0; i < seqs.size(); i++)
+            {
+                assert(seqs[i]->operator==(b->seqs[i].get()));
+                if (seqs[i]->operator!=(b->seqs[i].get()))
+                    return false;
+            }
+
+            assert(static_cast<PositionSequences*>(b)->operator==(static_cast<PositionSequences*>(this)));
+            return static_cast<PositionSequences*>(b)->operator==(static_cast<PositionSequences*>(this));
+        }
+
         char allele(std::size_t seqIndex, std::size_t alleleIndex)
         {
-            return (*seqs[seqIndex])[alleleIndex];
+            return seqs[seqIndex]->allele(alleleIndex,startI);
         }
 
         void showSequences()
@@ -115,7 +205,7 @@ namespace Gen
             for(auto& s : seqs)
             {
                 for(std::size_t i{0}; i < seqLength(); i++)
-                    std::cout << (*s)[i];
+                    std::cout << s->allele(i, startI);
                 std::cout << std::endl;
             }
         }
@@ -128,7 +218,7 @@ namespace Gen
 
         std::string getString(std::size_t seqIndex)
         {
-            return seqs[seqIndex]->getString();
+            return seqs[seqIndex]->getString(startI, endI);
         }
 
         /**
@@ -147,20 +237,20 @@ namespace Gen
         bool isValid()
         {
             for(auto& sequence : seqs)
-                if(seqs[0]->size() != sequence->size())
+                if(sequence->trueSize() <= endI)
                     return false;
             return true;
         }
 
         std::size_t trueSeqLength(){return seqs[0]->trueSize();}
-        std::size_t seqLength(){return seqs[0]->size();}
+        std::size_t seqLength(){return endI - startI;}
 
         bool isSegregating(std::size_t i)
         {
-            char ref = (*seqs[0])[i];
+            char ref = seqs[0]->allele(i, startI);
             for(auto& seq : seqs)
             {
-                if ((*seq)[i] != ref)
+                if (seq->allele(i,startI) != ref)
                     return true;
             }
             return false;
@@ -170,16 +260,32 @@ namespace Gen
 
         template<typename Index>
         auto getPos(Index i) {
-            return pos[i];
+            return (*pos)[i];
         }
 
         template<typename Index>
         Sequences* setWindowByIndex(Index start, Index end)
         {
-            for(auto& seq : seqs) seq->setWindowByIndex(start,end);
+            startI = start;
+            endI   = end;
             return this;
         }
+
+        template<typename Fxn>
+        void filter(Fxn f)
+        {
+            boost::remove_erase_if(seqs,f);
+        }
+
+        auto getStartI(){ return startI;}
+        auto getEndI()  {return endI;}
         virtual std::size_t nOrganisms()=0;
+
+        /**
+         * Creates a shallow copy of the object. Primitives are fully copied but the sequences
+         * are shared. It's best to treat sequences as read only to avoid problems  .
+         */
+        virtual std::shared_ptr<Sequences> clone()=0;
 
     protected:
         std::vector<std::shared_ptr<Sequence>> seqs;
@@ -195,12 +301,14 @@ namespace Gen
             {
                 int siteIndex = sites(rng);
                 for(std::size_t seqI = 0; seqI < seqs.size(); seqI++)
-                    (*copy->seqs[seqI].get())[i] = (*seqs[seqI].get())[siteIndex];
+                    copy->seqs[seqI]->allele(i, startI) = seqs[seqI]->allele(siteIndex, startI);
             }
             return copy;
         }
 
-        virtual std::shared_ptr<Sequences> clone()=0;
+    private:
+        std::size_t startI, endI;
+
     };
 
     class HaploidSequences : public Sequences
@@ -208,11 +316,9 @@ namespace Gen
     public:
 
         HaploidSequences(){}
-        HaploidSequences(HaploidSequences& other)
-        {
-            for(auto& seq : other.seqs)
-                addSeq(seq);
-        }
+        HaploidSequences(HaploidSequences* other)
+        : Sequences(static_cast<Sequences*>(other))
+        { }
 
         void addOrganism(Sequences& sequences, int i)
         {
@@ -221,7 +327,6 @@ namespace Gen
 
         std::size_t nOrganisms() { return seqs.size();}
 
-    protected:
         std::shared_ptr<Sequences> clone()
         {
             return std::shared_ptr<Sequences>(new HaploidSequences(*this));
@@ -247,11 +352,11 @@ namespace Gen
         double getcM(int chrPos)
         {
             // binary search for ---|*|----
-            int i = win::getIndexBehindOrEqual(pos,chrPos);
-            if(chrPos == pos[i])
+            int i = win::getIndexBehindOrEqual(*pos,chrPos);
+            if(chrPos == (*pos)[i])
                 return cM[i];
-            assert(i+1 < static_cast<int>(pos.size()));
-            return cM[i] + (chrPos-pos[i])*(cM[i+1] - cM[i])/(pos[i+1] - pos[i]); // extrapolate cM
+            assert(i+1 < static_cast<int>(pos->size()));
+            return cM[i] + (chrPos-(*pos)[i])*(cM[i+1] - cM[i])/((*pos)[i+1] - (*pos)[i]); // extrapolate cM
         }
 
         double distance(int start, int end)
@@ -284,7 +389,7 @@ namespace Gen
                     boost::tokenizer<boost::char_separator<char>> tokens(line, sep);
                     std::vector<std::string> row(tokens.begin(), tokens.end());
                     assert(row.size() > 0);
-                    pos.push_back(atoi(row[0].c_str()));
+                    pos->push_back(atoi(row[0].c_str()));
                     cM.push_back(atof(row[2].c_str()));
                 }
             }
@@ -297,9 +402,9 @@ namespace Gen
                 download(dataSetPath());
         }
 
-        void download(std::string path)
+        int download(std::string path)
         {
-            int res = system(std::string(std::string("wget ") +
+            return system(std::string(std::string("wget ") +
                            std::string("https://hapmap.ncbi.nlm.nih.gov/downloads/recombination/latest/rates/genetic_map_chr") +
                            std::to_string(chr) +
                            std::string("_b36.txt ") +
@@ -328,13 +433,16 @@ namespace Gen
     public:
 
         DiploidSequences(){}
-        DiploidSequences(DiploidSequences& other)
-        {
-            for(auto& seq : other.seqs)
-                addSeq(seq);
+        DiploidSequences(DiploidSequences* other)
+        : Sequences(static_cast<Sequences*>(other)){
+
         }
 
-    protected:
+        bool operator==(DiploidSequences* b)
+        {
+            return static_cast<Sequences*>(b)->operator==(static_cast<Sequences*>(this));
+        }
+
         std::shared_ptr<Sequences> clone()
         {
             return std::shared_ptr<Sequences>(new DiploidSequences(*this));
@@ -353,8 +461,42 @@ class HapMapSequences : public DiploidSequences
     {
     public:
 
+        HapMapSequences(HapMapSequences* toCopy)
+        : DiploidSequences(static_cast<DiploidSequences*>(toCopy)){
+            rsids = toCopy->rsids;
+        }
+
+        bool operator==(HapMapSequences* b)
+        {
+            for(std::size_t i = 0; i < b->rsids->size(); i++)
+            {
+                assert((*rsids)[i] == (*(b->rsids))[i]);
+                if ((*rsids)[i] != (*(b->rsids))[i])
+                    return false;
+            }
+
+            assert(static_cast<DiploidSequences*>(b)->operator==(static_cast<DiploidSequences*>(this)));
+            return static_cast<DiploidSequences*>(b)->operator==(static_cast<DiploidSequences*>(this));
+        }
+
+        bool operator!=(HapMapSequences* b) {
+            return !((*this) == b);
+        }
+
+//    HapMapSequences(HapMapSequences* toCopy)
+//            : DiploidSequences(static_cast<DiploidSequences*>(toCopy)){
+//        rsids = toCopy->rsids;
+//        pos   = toCopy->pos;
+//        std::cerr << this->getPos(0) << std::endl;
+//        chr   = toCopy->chr;
+//        build = toCopy->build;
+//        for(auto& s : toCopy->seqs)
+//            seqs.push_back(s);
+//    }
+
         HapMapSequences(std::string fileName)
         {
+            rsids = std::make_shared<std::vector<std::string>>();
             std::ifstream file;
             file.open(fileName);
             if(file.is_open())
@@ -372,7 +514,7 @@ class HapMapSequences : public DiploidSequences
 
                 seqs.resize(numSeqs);
                 for(std::size_t i = 0; i < numSeqs; i++)
-                    seqs[i] = std::shared_ptr<Sequence>(new Sequence(rsids, pos));
+                    seqs[i] = std::shared_ptr<Sequence>(new Sequence());
 
                 while(!file.eof())
                 {
@@ -384,8 +526,8 @@ class HapMapSequences : public DiploidSequences
                     std::vector<std::string> row(tokens.begin(), tokens.end());
 
                     assert(row.size() > 0);
-                    rsids.push_back(row[0]);
-                    pos.push_back(atoi(row[1].c_str()));
+                    rsids->push_back(row[0]);
+                    pos->push_back(atoi(row[1].c_str()));
 
                     for(std::size_t i = 2; i < row.size(); i++)
                         seqs[i-2]->addAllele(row[i][0]);
@@ -393,37 +535,22 @@ class HapMapSequences : public DiploidSequences
             }
         }
 
-        auto trueSeqLength()
-        {
-            return static_cast<Sequence*>(seqs[0].get())->trueSize();
-        }
-
-        /**
-         * @param startIndex inclusive
-         * @param endIndex exclusive
-         */
-        template<typename WholeNumber>
-        void setWindowByIndex(WholeNumber startIndex, WholeNumber endIndex)
-        {
-            for(auto& seq : seqs)
-            {
-                Sequence* ls;
-                ls = static_cast<Sequence*>(seq.get());
-                ls->setWindowByIndex(startIndex, endIndex);
-            }
-        }
-
         void setWindowByPos(int startPos, int endPos)
         {
-            int startI = win::getIndexBehindOrEqual(pos,startPos);
-            int endI = win::getIndexInfront(pos,endPos);
+            int startI = win::getIndexBehindOrEqual(*pos,startPos);
+            int endI = win::getIndexInfront(*pos,endPos);
             std::cerr << "s:" << startI << "\t e:" << endI << std::endl;
             assert(startI >= 0 && endI >= 0 && endI != startI);
             setWindowByIndex(startI, endI);
         }
 
+        std::shared_ptr<Sequences> clone()
+        {
+            return std::shared_ptr<Sequences>(new HapMapSequences(*this));
+        }
+
     private:
-        std::vector<std::string> rsids;
+        std::shared_ptr<std::vector<std::string>> rsids;
     };
 
 

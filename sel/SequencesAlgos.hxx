@@ -137,6 +137,8 @@ namespace SeqAlg
     template<typename Index>
     double integrateEHH(std::shared_ptr<Gen::Sequences> seqs, Gen::GeneticMap& map, Index idx)
     {
+        auto startI = seqs->getStartI();
+        auto endI   = seqs->getEndI();
         std::vector<double> ehhScores;
         std::vector<double> distances;
         int start{static_cast<int>(idx)}, end{static_cast<int>(idx+1)};
@@ -157,8 +159,31 @@ namespace SeqAlg
             ehhScores.push_back(ehh(seqs->setWindowByIndex(start,end++)));
         }while(ehhScores.back() >= 0.05 && end <= static_cast<int>(seqs->trueSeqLength()));
 
+        seqs->setWindowByIndex(startI, endI);
         auc += areaUC(distances, ehhScores);
         return auc;
+    }
+
+    template<typename Index>
+    double almostiHS2(std::shared_ptr<Gen::Sequences> seqs, Gen::GeneticMap& map, Index idx)
+    {
+        assert(seqs->nSequences() > 20);
+        auto cloneA = seqs->clone();
+        auto cloneB = seqs->clone();
+        cloneA->filter([&](auto& seq){return seq->allele(idx, seqs->getStartI()) != seqs->allele(0, idx);});
+        cloneB->filter([&](auto& seq){return seq->allele(idx, seqs->getStartI()) == seqs->allele(0, idx);});
+
+        double ret;
+        if(cloneA->nSequences() > 4 && cloneB->nSequences() > 4)
+        {
+            double a = integrateEHH(cloneA, map, idx);
+            double b = integrateEHH(cloneB, map, idx);
+            ret = log(a/b);
+        }
+        else
+            ret = std::numeric_limits<double>::infinity();
+
+        return ret;
     }
 
     template<typename Index>
@@ -170,8 +195,7 @@ namespace SeqAlg
 
         for(auto& aSeq : ogSeqs)
         {
-            Gen::Sequence& s = *aSeq;
-            if (s[idx] == seqs->allele(0, idx))
+            if (aSeq->allele(idx, seqs->getStartI()) == seqs->allele(0, idx))
                 seqsA.push_back(aSeq);
             else
                 seqsB.push_back(aSeq);
